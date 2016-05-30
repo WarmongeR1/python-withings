@@ -223,6 +223,7 @@ class WithingsMeasureGroup(WithingsObject):
 class WithingsSleepSummary(WithingsObject):
     def __init__(self, data):
         super(WithingsSleepSummary, self).__init__(data)
+        self.raw_data = data
         self.series = [WithingsSleepSummarySeries(series) for series in
                        self.series]
 

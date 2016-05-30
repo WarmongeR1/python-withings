@@ -129,7 +129,7 @@ class WithingsApi(object):
         activities = r['activities'] if 'activities' in r else [r]
         return [WithingsIntradayActivity(act) for act in activities]
 
-    def get_sleepsummary(self, **kwargs):
+    def get_sleep_summary(self, **kwargs):
         r = self.request('sleep', 'getsummary', params=kwargs, version='v2')
         return WithingsSleepSummary(r)
 
@@ -233,6 +233,8 @@ class WithingsSleepSummarySeries(WithingsObject):
         super(WithingsSleepSummarySeries, self).__init__(data)
         for n in self.data:
             self.__setattr__(n, data['data'][n])
+            self.startdate = data['startdate']
+            self.enddate = data['enddata']
 
 
 class WithingsIntradayActivitySeries(WithingsObject):

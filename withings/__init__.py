@@ -41,7 +41,6 @@ import json
 import requests
 
 from arrow.parser import ParserError
-from datetime import datetime
 from requests_oauthlib import OAuth1, OAuth1Session
 
 
@@ -83,7 +82,8 @@ class WithingsAuth(object):
                               verifier=oauth_verifier)
         tokens = oauth.fetch_access_token('%s/access_token' % self.URL)
         return WithingsCredentials(access_token=tokens['oauth_token'],
-                                   access_token_secret=tokens['oauth_token_secret'],
+                                   access_token_secret=tokens[
+                                       'oauth_token_secret'],
                                    consumer_key=self.consumer_key,
                                    consumer_secret=self.consumer_secret,
                                    user_id=tokens['userid'])
@@ -123,6 +123,16 @@ class WithingsApi(object):
         activities = r['activities'] if 'activities' in r else [r]
         return [WithingsActivity(act) for act in activities]
 
+    def get_intradayactivity(self, **kwargs):
+        r = self.request('measure', 'getintradayactivity', params=kwargs,
+                         version='v2')
+        activities = r['activities'] if 'activities' in r else [r]
+        return [WithingsIntradayActivity(act) for act in activities]
+
+    def get_sleepsummary(self, **kwargs):
+        r = self.request('sleep', 'getsummary', params=kwargs, version='v2')
+        return WithingsSleepSummary(r)
+
     def get_measures(self, **kwargs):
         r = self.request('measure', 'getmeas', kwargs)
         return WithingsMeasures(r)
@@ -130,6 +140,10 @@ class WithingsApi(object):
     def get_sleep(self, **kwargs):
         r = self.request('sleep', 'get', params=kwargs, version='v2')
         return WithingsSleep(r)
+
+    def get_workout(self, **kwargs):
+        r = self.request('measure', 'getworkouts', params=kwargs, version='v2')
+        return WithingsWorkout(r)
 
     def subscribe(self, callback_url, comment, **kwargs):
         params = {'callbackurl': callback_url, 'comment': comment}
@@ -173,15 +187,17 @@ class WithingsActivity(WithingsObject):
 
 class WithingsMeasures(list, WithingsObject):
     def __init__(self, data):
-        super(WithingsMeasures, self).__init__([WithingsMeasureGroup(g) for g in data['measuregrps']])
+        super(WithingsMeasures, self).__init__(
+            [WithingsMeasureGroup(g) for g in data['measuregrps']])
         self.set_attributes(data)
 
 
 class WithingsMeasureGroup(WithingsObject):
     MEASURE_TYPES = (('weight', 1), ('height', 4), ('fat_free_mass', 5),
                      ('fat_ratio', 6), ('fat_mass_weight', 8),
-                     ('diastolic_blood_pressure', 9), ('systolic_blood_pressure', 10),
-                     ('heart_pulse', 11))
+                     ('diastolic_blood_pressure', 9),
+                     ('systolic_blood_pressure', 10),
+                     ('heart_pulse', 11), ('spo2', 54))
 
     def __init__(self, data):
         super(WithingsMeasureGroup, self).__init__(data)
@@ -204,6 +220,33 @@ class WithingsMeasureGroup(WithingsObject):
         return None
 
 
+class WithingsSleepSummary(WithingsObject):
+    def __init__(self, data):
+        super(WithingsSleepSummary, self).__init__(data)
+        self.series = [WithingsSleepSummarySeries(series) for series in
+                       self.series]
+
+
+class WithingsSleepSummarySeries(WithingsObject):
+    def __init__(self, data):
+        super(WithingsSleepSummarySeries, self).__init__(data)
+        for n in self.data:
+            self.__setattr__(n, data['data'][n])
+
+
+class WithingsIntradayActivitySeries(WithingsObject):
+    def __init__(self, time, data, ):
+        self.date = arrow.get(time)
+        super(WithingsIntradayActivitySeries, self).__init__(data[time])
+
+
+class WithingsIntradayActivity(WithingsObject):
+    def __init__(self, data):
+        super(WithingsIntradayActivity, self).__init__(data)
+        self.series = [WithingsIntradayActivitySeries(series, data['series'])
+                       for series in self.series]
+
+
 class WithingsSleepSeries(WithingsObject):
     def __init__(self, data):
         super(WithingsSleepSeries, self).__init__(data)
@@ -214,3 +257,16 @@ class WithingsSleep(WithingsObject):
     def __init__(self, data):
         super(WithingsSleep, self).__init__(data)
         self.series = [WithingsSleepSeries(series) for series in self.series]
+
+
+class WithingsWorkout(WithingsObject):
+    def __init__(self, data):
+        super(WithingsWorkout, self).__init__(data)
+        self.series = [WithingsWorkoutSeries(series) for series in self.series]
+
+
+class WithingsWorkoutSeries(WithingsObject):
+    def __init__(self, data):
+        super(WithingsWorkoutSeries, self).__init__(data)
+        for n in self.data:
+            self.__setattr__(n, data['data'][n])

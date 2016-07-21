@@ -234,7 +234,7 @@ class WithingsSleepSummarySeries(WithingsObject):
         for n in self.data:
             self.__setattr__(n, data['data'][n])
             self.startdate = data['startdate']
-            self.enddate = data['enddata']
+            self.enddate = data['enddate']
 
 
 class WithingsIntradayActivitySeries(WithingsObject):

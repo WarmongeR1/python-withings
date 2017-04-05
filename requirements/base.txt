@@ -1,4 +1,4 @@
 arrow<1.0
 requests>2
-requests-oauth<0.5
-requests-oauthlib<0.7
+requests-oauth>=0.5
+requests-oauthlib>=0.7

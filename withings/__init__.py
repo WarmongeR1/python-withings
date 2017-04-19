@@ -170,17 +170,15 @@ class WithingsApi(object):
 
 
 class WithingsObject(object):
-    def __init__(self, data):
-        self.set_attributes(data)
+    def __init__(self, data, timezone='UTC'):
+        self.set_attributes(data, timezone)
 
-    def set_attributes(self, data):
+    def set_attributes(self, data, timezone='UTC'):
         self.data = data
         for key, val in data.items():
             try:
                 if 'date' in key:
-                    attr_value = arrow.get(
-                        val,
-                        tz.gettz(data.get('timezone', 'UTC')))
+                    attr_value = arrow.get(val, tz.gettz(timezone))
                     setattr(self, key, attr_value)
                 else:
                     setattr(self, key, val)
@@ -194,8 +192,9 @@ class WithingsActivity(WithingsObject):
 
 class WithingsMeasures(list, WithingsObject):
     def __init__(self, data):
+        timezone = data.get('timezone', 'UTC')
         super(WithingsMeasures, self).__init__(
-            [WithingsMeasureGroup(g) for g in data['measuregrps']])
+            [WithingsMeasureGroup(g, timezone) for g in data['measuregrps']])
         self.set_attributes(data)
 
 
@@ -206,8 +205,8 @@ class WithingsMeasureGroup(WithingsObject):
                      ('systolic_blood_pressure', 10),
                      ('heart_pulse', 11), ('spo2', 54))
 
-    def __init__(self, data):
-        super(WithingsMeasureGroup, self).__init__(data)
+    def __init__(self, data, timezone='UTC'):
+        super(WithingsMeasureGroup, self).__init__(data, timezone)
         for n, t in self.MEASURE_TYPES:
             self.__setattr__(n, self.get_measure(t))
 

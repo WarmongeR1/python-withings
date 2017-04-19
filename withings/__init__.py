@@ -178,7 +178,8 @@ class WithingsObject(object):
         for key, val in data.items():
             try:
                 if 'date' in key:
-                    attr_value = arrow.get(val, tz.gettz(timezone))
+                    attr_value = arrow.get(val)
+                    attr_value = attr_value.to(timezone)
                     setattr(self, key, attr_value)
                 else:
                     setattr(self, key, val)

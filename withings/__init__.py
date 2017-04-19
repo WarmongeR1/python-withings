@@ -42,6 +42,7 @@ import requests
 
 from arrow.parser import ParserError
 from requests_oauthlib import OAuth1, OAuth1Session
+from dateutil import tz
 
 
 class WithingsCredentials(object):
@@ -176,7 +177,13 @@ class WithingsObject(object):
         self.data = data
         for key, val in data.items():
             try:
-                setattr(self, key, arrow.get(val) if 'date' in key else val)
+                if 'date' in key:
+                    attr_value = arrow.get(
+                        val,
+                        tz.gettz(data.get('timezone', 'UTC')))
+                    setattr(self, key, attr_value)
+                else:
+                    setattr(self, key, val)
             except ParserError:
                 setattr(self, key, val)
 
